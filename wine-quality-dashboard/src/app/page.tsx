@@ -18,6 +18,21 @@ const featureRanges = {
 // Type matching the keys in featureRanges
 type FeatureName = keyof typeof featureRanges;
 
+// Define a type for error handling
+type ErrorWithMessage = {
+    message: string;
+};
+
+// Helper function for type checking errors
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as Record<string, unknown>).message === 'string'
+    );
+}
+
 export default function Home() {
     const [features, setFeatures] = useState<Record<FeatureName, number>>({
         'fixed acidity': 7.0,
@@ -79,13 +94,13 @@ export default function Home() {
 
             setPrediction(data.predicted_quality);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             // Check if this might be a CORS error
-            if (err instanceof TypeError && err.message.includes('fetch')) {
+            if (err instanceof TypeError && isErrorWithMessage(err) && err.message.includes('fetch')) {
                 setError('Network error: This could be due to CORS restrictions. Please ensure the API allows requests from this origin.');
             } else {
-                setError(err.message);
+                setError(isErrorWithMessage(err) ? err.message : 'An unknown error occurred');
             }
         } finally {
             setIsLoading(false);
