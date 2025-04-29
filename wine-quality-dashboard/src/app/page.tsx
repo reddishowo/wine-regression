@@ -3,16 +3,16 @@
 import { useState } from 'react';
 import Head from 'next/head';
 
-// Define ranges based on your EDA of the ORIGINAL (unscaled) data
+// Define ranges based on the 95th percentile of the original data
 const featureRanges = {
-    'fixed acidity': { min: 4, max: 16, step: 0.1 },
-    'volatile acidity': { min: 0, max: 1.6, step: 0.01 },
-    'citric acid': { min: 0, max: 1.7, step: 0.01 },
-    'chlorides': { min: 0, max: 0.7, step: 0.001 },
-    'free sulfur dioxide': { min: 1, max: 300, step: 1 },
-    'density': { min: 0.98, max: 1.04, step: 0.0001 },
-    'alcohol': { min: 8, max: 15, step: 0.1 },
-    'type_white': { min: 0, max: 1, step: 1 },
+    'fixed acidity': { min: 4, max: 12, step: 0.1 },        // 95th percentile ~11.8
+    'volatile acidity': { min: 0, max: 0.9, step: 0.01 },   // 95th percentile ~0.85
+    'citric acid': { min: 0, max: 0.8, step: 0.01 },        // 95th percentile ~0.75
+    'chlorides': { min: 0, max: 0.2, step: 0.001 },         // 95th percentile ~0.18
+    'free sulfur dioxide': { min: 1, max: 65, step: 1 },    // 95th percentile ~64
+    'density': { min: 0.98, max: 1.01, step: 0.0001 },      // 95th percentile ~1.005
+    'alcohol': { min: 8, max: 14, step: 0.1 },              // 95th percentile ~13.5
+    'type_white': { min: 0, max: 1, step: 1 },              // Binary feature (0 or 1)
 };
 
 // Type matching the keys in featureRanges
@@ -54,7 +54,7 @@ export default function Home() {
         setPrediction(null);
 
         try {
-            const response = await fetch('/api/predict', {
+            const response = await fetch('https://bias-classifier.agreeablemushroom-fe0ec30e.southeastasia.azurecontainerapps.io/predict_wine', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -81,7 +81,12 @@ export default function Home() {
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message);
+            // Check if this might be a CORS error
+            if (err instanceof TypeError && err.message.includes('fetch')) {
+                setError('Network error: This could be due to CORS restrictions. Please ensure the API allows requests from this origin.');
+            } else {
+                setError(err.message);
+            }
         } finally {
             setIsLoading(false);
         }
